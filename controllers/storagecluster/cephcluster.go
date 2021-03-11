@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	v1 "github.com/openshift/api/config/v1"
 	objectreferencesv1 "github.com/openshift/custom-resource-status/objectreferences/v1"
 	ocsv1 "github.com/openshift/ocs-operator/api/v1"
 	"github.com/openshift/ocs-operator/controllers/defaults"
@@ -114,6 +115,11 @@ func (obj *ocsCephCluster) ensureCreated(r *StorageClusterReconciler, sc *ocsv1.
 	// Set StorageCluster instance as the owner and controller
 	if err := controllerutil.SetControllerReference(sc, cephCluster, r.Scheme); err != nil {
 		return err
+	}
+
+	if r.platform.platform == v1.IBMCloudPlatformType {
+		r.Log.Info("Increasing Mon failover timeout for IBM Cloud Platform")
+		cephCluster.Spec.HealthCheck.DaemonHealth.Monitor.Timeout = "900s"
 	}
 
 	// Check if this CephCluster already exists
